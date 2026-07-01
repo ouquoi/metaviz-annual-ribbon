@@ -1,6 +1,6 @@
 # Annual Ribbon
 
-A compact 365-cell horizontal band for Metabase — one cell per day of the year, colored by value intensity. Instantly reveals seasonal patterns and daily trends at a glance.
+A compact horizontal band for Metabase — one cell per time period, colored by value intensity. Supports hourly, daily, monthly, quarterly, and yearly aggregations with automatic granularity detection. Instantly reveals patterns and trends at a glance.
 
 ![preview](assets/preview.png)
 
@@ -19,15 +19,20 @@ A compact 365-cell horizontal band for Metabase — one cell per day of the year
 
 ### Query
 
-Your question must return at least one date column and one numeric column:
+Your question must return at least one date column and one numeric column. The granularity is **detected automatically** from the data — no configuration needed.
 
 ```sql
-SELECT
-  date_trunc('day', created_at)::date AS day,
-  COUNT(*) AS validations
-FROM events
-GROUP BY 1
-ORDER BY 1
+-- Daily (365 cells per year)
+SELECT date_trunc('day', created_at)::date AS day, COUNT(*) AS validations
+FROM events GROUP BY 1 ORDER BY 1
+
+-- Monthly (12 cells per year)
+SELECT date_trunc('month', created_at)::date AS month, COUNT(*) AS validations
+FROM events GROUP BY 1 ORDER BY 1
+
+-- Hourly (24 cells per day)
+SELECT date_trunc('hour', created_at) AS hour, COUNT(*) AS validations
+FROM events GROUP BY 1 ORDER BY 1
 ```
 
 ### Select the visualization
@@ -55,21 +60,35 @@ In the question editor, open the visualization picker and select **Annual Ribbon
 
 | Feature | Details |
 |---------|---------|
-| Hover tooltip | Highlights the hovered day, dims others, shows date and value |
-| Drill-through | Click a day cell to filter by that date |
+| Auto granularity | Detects hour / day / month / quarter / year from data automatically |
+| Multi-year support | Spans multiple years when the data covers more than one year |
+| Hover tooltip | Highlights the hovered cell, dims others, shows period and value |
+| Drill-through | Click a cell to filter by that time period |
 | Animation | Cells fade in sequentially on load (SVG native, sandbox-safe) |
 | Dark mode | Full dark theme support |
 | Responsive | Adapts to any card size |
-| Missing days | Days absent from the data are shown as empty (neutral) cells |
+| Missing periods | Periods absent from the data are shown as empty (neutral) cells |
 
 ## Data requirements
 
 | Column | Type | Notes |
 |--------|------|-------|
-| Date column | Date / DateTime | One row per day; duplicate days use the last encountered value |
+| Date column | Date / DateTime | One row per period; duplicates use the last encountered value |
 | Value column | Numeric | Negative and null values are treated as missing (empty cell) |
 
 The visualization requires exactly one date column and one numeric column. If either is missing, a clear error message is displayed.
+
+### Granularity detection
+
+The granularity is inferred from the minimum interval between consecutive dates:
+
+| Min interval | Detected granularity | Cells |
+|---|---|---|
+| ≤ 2 hours | Hour | 24 per day |
+| ≤ 2 days | Day | 365–366 per year |
+| ≤ 50 days | Month | 12 per year |
+| ≤ 150 days | Quarter | 4 per year |
+| > 150 days | Year | 1 per year |
 
 ## Development
 
