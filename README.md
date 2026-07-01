@@ -55,12 +55,16 @@ In the question editor, open the visualization picker and select **Annual Ribbon
 | Band height | Height of the ribbon in pixels | `40` |
 | Color — low values | Color for the lowest values | `#ebedf0` |
 | Color — high values | Color for the highest values | `#509EE3` |
+| Color scale | `Linear` or `Logarithmic` — log compresses large outliers | `Linear` |
+| Show legend | Display the color scale legend below the ribbon | `true` |
 
 ## Capabilities
 
 | Feature | Details |
 |---------|---------|
 | Auto granularity | Detects hour / day / week / month / quarter / year from data automatically |
+| Color scale | Linear (default) or logarithmic — log compresses extreme outliers for better contrast |
+| Color legend | Gradient bar with min / mid / max values below the ribbon |
 | Multi-year support | Spans multiple years when the data covers more than one year |
 | Hover tooltip | Highlights the hovered cell, dims others, shows period and value |
 | Drill-through | Click a cell to filter by that time period |

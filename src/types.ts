@@ -4,4 +4,6 @@ export type Settings = {
   bandHeight?: number;
   colorLow?: string;
   colorHigh?: string;
+  scaleMode?: "linear" | "log";
+  showLegend?: boolean;
 };

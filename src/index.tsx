@@ -81,6 +81,23 @@ const createVisualization: CreateCustomVisualization<Settings> = ({ defineSettin
         getSection() { return "Appearance"; },
         getDefault() { return "#509EE3"; },
       }),
+      scaleMode: defineSetting({
+        id: "scaleMode",
+        title: "Color scale",
+        widget: "select",
+        getSection() { return "Appearance"; },
+        getDefault() { return "linear"; },
+        getProps() {
+          return { options: [{ name: "Linear", value: "linear" }, { name: "Logarithmic", value: "log" }] };
+        },
+      }),
+      showLegend: defineSetting({
+        id: "showLegend",
+        title: "Show legend",
+        widget: "toggle",
+        getSection() { return "Appearance"; },
+        getDefault() { return true; },
+      }),
     },
 
     VisualizationComponent: AnnualRibbon,

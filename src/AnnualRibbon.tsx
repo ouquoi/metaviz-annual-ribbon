@@ -10,9 +10,25 @@ import {
 const LABEL_H = 18;
 const LABEL_GAP = 4;
 const MARGIN_X = 6;
+const LEGEND_BAR_H = 10;
+const LEGEND_GAP = 4;
+const LEGEND_TEXT_H = 14;
+const LEGEND_H = LEGEND_BAR_H + LEGEND_GAP + LEGEND_TEXT_H;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Col = Record<string, any>;
+
+function normalize(v: number, max: number, mode: "linear" | "log"): number {
+  if (max <= 0) return 0;
+  if (mode === "log") return Math.log1p(v) / Math.log1p(max);
+  return v / max;
+}
+
+function formatValue(v: number): string {
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
+  return v.toLocaleString();
+}
 
 export function AnnualRibbon({
   series, settings, width, height, colorScheme, onClick,
@@ -27,6 +43,8 @@ export function AnnualRibbon({
   const colorLow = settings?.colorLow ?? "#ebedf0";
   const colorHigh = settings?.colorHigh ?? "#509EE3";
   const bandH = Math.max(8, settings?.bandHeight ?? 40);
+  const scaleMode = settings?.scaleMode ?? "linear";
+  const showLegend = settings?.showLegend ?? true;
 
   const cw = (width ?? 0) > 0 ? Math.floor(width ?? 0) : 0;
   const ch = (height ?? 0) > 0 ? Math.floor(height ?? 0) : 0;
@@ -47,7 +65,6 @@ export function AnnualRibbon({
 
   if (dateIdx === -1 || valueIdx === -1) return null;
 
-  // Parse dates to detect granularity
   const rawDates: Date[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const row of data.rows as any[][]) {
@@ -58,7 +75,6 @@ export function AnnualRibbon({
 
   const granularity: Granularity = detectGranularity(rawDates);
 
-  // Build value map keyed by period
   const valueMap = new Map<string, number>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const row of data.rows as any[][]) {
@@ -70,22 +86,28 @@ export function AnnualRibbon({
     if (!isNaN(v) && v >= 0) valueMap.set(dateToPeriodKey(d, granularity), v);
   }
 
-  // Generate all periods spanning min→max date
   const sortedDates = [...rawDates].sort((a, b) => a.getTime() - b.getTime());
-  const minDate = sortedDates[0];
-  const maxDate = sortedDates[sortedDates.length - 1];
-  const periods = generatePeriods(granularity, minDate, maxDate);
+  const periods = generatePeriods(granularity, sortedDates[0], sortedDates[sortedDates.length - 1]);
   const nPeriods = periods.length;
 
-  const maxVal = valueMap.size > 0 ? Math.max(...valueMap.values()) : 1;
+  const allValues = [...valueMap.values()];
+  const maxVal = allValues.length > 0 ? Math.max(...allValues) : 1;
+  const minVal = allValues.length > 0 ? Math.min(...allValues) : 0;
+
   const animStep = nPeriods > 0 ? Math.max(0, Math.floor(1500 / nPeriods)) : 2;
 
-  // Layout — center vertically
+  // Reserve space for legend only if it fits
+  const legendVisible = showLegend && ch >= LABEL_H + LABEL_GAP + bandH + LEGEND_H + 10;
+  const usedLegendH = legendVisible ? LEGEND_H + 6 : 0;
+
+  // Center band+labels block vertically in available height
   const totalBlockH = LABEL_H + LABEL_GAP + bandH;
-  const startY = Math.max(LABEL_H + LABEL_GAP, Math.round((ch - totalBlockH) / 2));
+  const availableH = ch - usedLegendH;
+  const startY = Math.max(LABEL_H + LABEL_GAP, Math.round((availableH - totalBlockH) / 2));
   const labelBaselineY = startY - LABEL_GAP - 2;
   const bandY = startY;
   const cellW = (cw - 2 * MARGIN_X) / nPeriods;
+  const legendY = ch - usedLegendH + 2;
 
   const hoveredValue = hoveredKey != null ? valueMap.get(hoveredKey) : undefined;
 
@@ -99,7 +121,7 @@ export function AnnualRibbon({
           left: "50%",
           transform: "translateX(-50%)",
           backgroundColor: isDark ? "#2a2a2a" : "#ffffff",
-          border: `1.5px solid ${lerpColor(colorLow, colorHigh, hoveredValue != null && maxVal > 0 ? hoveredValue / maxVal : 0)}`,
+          border: `1.5px solid ${lerpColor(colorLow, colorHigh, hoveredValue != null ? normalize(hoveredValue, maxVal, scaleMode) : 0)}`,
           borderRadius: 5,
           padding: "3px 10px",
           fontSize: 12,
@@ -115,6 +137,13 @@ export function AnnualRibbon({
       )}
 
       <svg width={cw} height={ch} style={{ display: "block" }} onMouseLeave={() => setHoveredKey(null)}>
+        <defs>
+          <linearGradient id="ar-legend-grad" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor={colorLow} />
+            <stop offset="100%" stopColor={colorHigh} />
+          </linearGradient>
+        </defs>
+
         {/* Separator labels and lines */}
         {periods.map((p, i) => {
           if (!p.separatorLabel) return null;
@@ -134,7 +163,7 @@ export function AnnualRibbon({
         {/* Period cells */}
         {periods.map((p, i) => {
           const val = valueMap.get(p.key);
-          const t = val != null && maxVal > 0 ? val / maxVal : -1;
+          const t = val != null ? normalize(val, maxVal, scaleMode) : -1;
           const fill = t >= 0 ? lerpColor(colorLow, colorHigh, t) : emptyColor;
           const x = MARGIN_X + i * cellW;
           const dim = hoveredKey !== null && hoveredKey !== p.key;
@@ -167,6 +196,41 @@ export function AnnualRibbon({
             </g>
           );
         })}
+
+        {/* Color legend */}
+        {legendVisible && (
+          <g>
+            <rect
+              x={MARGIN_X}
+              y={legendY}
+              width={cw - 2 * MARGIN_X}
+              height={LEGEND_BAR_H}
+              fill="url(#ar-legend-grad)"
+              rx={3}
+            />
+            <text
+              x={MARGIN_X}
+              y={legendY + LEGEND_BAR_H + LEGEND_GAP + LEGEND_TEXT_H - 2}
+              fontSize={10} fill={labelColor} fontFamily="sans-serif" textAnchor="start"
+            >
+              {formatValue(minVal)}{scaleMode === "log" ? " (log)" : ""}
+            </text>
+            <text
+              x={cw / 2}
+              y={legendY + LEGEND_BAR_H + LEGEND_GAP + LEGEND_TEXT_H - 2}
+              fontSize={10} fill={labelColor} fontFamily="sans-serif" textAnchor="middle"
+            >
+              {formatValue((minVal + maxVal) / 2)}
+            </text>
+            <text
+              x={cw - MARGIN_X}
+              y={legendY + LEGEND_BAR_H + LEGEND_GAP + LEGEND_TEXT_H - 2}
+              fontSize={10} fill={labelColor} fontFamily="sans-serif" textAnchor="end"
+            >
+              {formatValue(maxVal)}
+            </text>
+          </g>
+        )}
       </svg>
     </div>
   );
