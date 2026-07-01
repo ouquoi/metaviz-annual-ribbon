@@ -42,7 +42,20 @@ export function getAllDaysOfYear(year: number): Date[] {
   return days;
 }
 
-export type Granularity = "hour" | "day" | "month" | "quarter" | "year";
+export type Granularity = "hour" | "day" | "week" | "month" | "quarter" | "year";
+
+function isoWeekNumber(d: Date): number {
+  const utc = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  utc.setUTCDate(utc.getUTCDate() + 4 - (utc.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+  return Math.ceil((((utc.getTime() - yearStart.getTime()) / 86_400_000) + 1) / 7);
+}
+
+function isoWeekYear(d: Date): number {
+  const utc = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  utc.setUTCDate(utc.getUTCDate() + 4 - (utc.getUTCDay() || 7));
+  return utc.getUTCFullYear();
+}
 
 export interface Period {
   key: string;
@@ -63,6 +76,7 @@ export function detectGranularity(dates: Date[]): Granularity {
   const D = 86_400_000;
   if (minDiff <= 2 * H) return "hour";
   if (minDiff <= 2 * D) return "day";
+  if (minDiff <= 10 * D) return "week";
   if (minDiff <= 50 * D) return "month";
   if (minDiff <= 150 * D) return "quarter";
   return "year";
@@ -75,6 +89,7 @@ export function dateToPeriodKey(d: Date, g: Granularity): string {
   const h = String(d.getHours()).padStart(2, "0");
   if (g === "hour") return `${y}-${m}-${day} ${h}`;
   if (g === "day") return `${y}-${m}-${day}`;
+  if (g === "week") return `${isoWeekYear(d)}-W${String(isoWeekNumber(d)).padStart(2, "0")}`;
   if (g === "month") return `${y}-${m}`;
   if (g === "quarter") return `${y}-Q${Math.ceil((d.getMonth() + 1) / 3)}`;
   return `${y}`;
@@ -92,6 +107,10 @@ export function formatPeriodLabel(key: string, g: Granularity): string {
   if (g === "month") {
     const [y, m] = key.split("-");
     return `${MONTHS_SHORT_EN[parseInt(m) - 1]} ${y}`;
+  }
+  if (g === "week") {
+    const [y, w] = key.split("-W");
+    return `W${w} ${y}`;
   }
   if (g === "quarter") return key.replace("-", " ");
   return key;
@@ -133,6 +152,33 @@ export function generatePeriods(g: Granularity, minDate: Date, maxDate: Date): P
         }
         periods.push({ key: dateToPeriodKey(d, "day"), date: new Date(d), separatorLabel: label });
       }
+    }
+    return periods;
+  }
+
+  if (g === "week") {
+    const start = new Date(minDate);
+    const dayOfWeek = start.getDay() || 7;
+    start.setDate(start.getDate() - (dayOfWeek - 1));
+    start.setHours(0, 0, 0, 0);
+    const multiYear = maxDate.getFullYear() > minDate.getFullYear();
+    let cur = new Date(start);
+    let lastMonth = -1;
+    let lastYear = -1;
+    while (cur <= maxDate) {
+      const curMonth = cur.getMonth();
+      const curYear = cur.getFullYear();
+      let label: string | undefined;
+      if (curYear !== lastYear) {
+        label = multiYear ? `${curYear}` : MONTHS_SHORT_EN[curMonth];
+        lastYear = curYear;
+        lastMonth = curMonth;
+      } else if (curMonth !== lastMonth) {
+        label = MONTHS_SHORT_EN[curMonth];
+        lastMonth = curMonth;
+      }
+      periods.push({ key: dateToPeriodKey(cur, "week"), date: new Date(cur), separatorLabel: label });
+      cur = new Date(cur.getTime() + 7 * 86_400_000);
     }
     return periods;
   }

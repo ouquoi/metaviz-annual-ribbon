@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { AnnualRibbon } from "./AnnualRibbon";
 import type { Settings } from "./types";
 
-type GranularityKey = "hour" | "day" | "month" | "quarter" | "year";
+type GranularityKey = "hour" | "day" | "week" | "month" | "quarter" | "year";
 
 function generateMockRows(granularity: GranularityKey): [string, number][] {
   const rows: [string, number][] = [];
@@ -23,6 +23,12 @@ function generateMockRows(granularity: GranularityKey): [string, number][] {
         const v = Math.round(Math.abs(Math.sin(doy * 0.17) * 80 + Math.cos(doy * 0.09) * 40 + 30));
         rows.push([`${year}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`, v]);
       }
+    }
+  } else if (granularity === "week") {
+    for (let w = 0; w < 52; w++) {
+      const d = new Date(year, 0, 1 + w * 7);
+      const v = Math.round(Math.abs(Math.sin(w * 0.25) * 70 + Math.cos(w * 0.12) * 40 + 30));
+      rows.push([d.toISOString(), v]);
     }
   } else if (granularity === "month") {
     for (let y = 0; y < 2; y++) {
@@ -81,6 +87,7 @@ function App() {
           <select value={granularity} onChange={e => setGranularity(e.target.value as GranularityKey)}>
             <option value="hour">Hour</option>
             <option value="day">Day</option>
+            <option value="week">Week</option>
             <option value="month">Month</option>
             <option value="quarter">Quarter</option>
             <option value="year">Year</option>

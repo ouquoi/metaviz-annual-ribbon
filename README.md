@@ -60,7 +60,7 @@ In the question editor, open the visualization picker and select **Annual Ribbon
 
 | Feature | Details |
 |---------|---------|
-| Auto granularity | Detects hour / day / month / quarter / year from data automatically |
+| Auto granularity | Detects hour / day / week / month / quarter / year from data automatically |
 | Multi-year support | Spans multiple years when the data covers more than one year |
 | Hover tooltip | Highlights the hovered cell, dims others, shows period and value |
 | Drill-through | Click a cell to filter by that time period |
@@ -86,6 +86,7 @@ The granularity is inferred from the minimum interval between consecutive dates:
 |---|---|---|
 | ≤ 2 hours | Hour | 24 per day |
 | ≤ 2 days | Day | 365–366 per year |
+| ≤ 10 days | Week | 52–53 per year |
 | ≤ 50 days | Month | 12 per year |
 | ≤ 150 days | Quarter | 4 per year |
 | > 150 days | Year | 1 per year |
