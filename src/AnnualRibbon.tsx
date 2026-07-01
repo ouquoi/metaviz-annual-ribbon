@@ -77,13 +77,19 @@ export function AnnualRibbon({
 
   const valueMap = new Map<string, number>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rowMap = new Map<string, { rawDate: unknown; rawValue: unknown; row: unknown[] }>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const row of data.rows as any[][]) {
     const d = parseDate(row[dateIdx]);
     if (!d) continue;
     const raw = row[valueIdx];
     if (raw == null) continue;
     const v = typeof raw === "number" ? raw : parseFloat(String(raw));
-    if (!isNaN(v) && v >= 0) valueMap.set(dateToPeriodKey(d, granularity), v);
+    if (!isNaN(v) && v >= 0) {
+      const key = dateToPeriodKey(d, granularity);
+      valueMap.set(key, v);
+      rowMap.set(key, { rawDate: row[dateIdx], rawValue: raw, row });
+    }
   }
 
   const sortedDates = [...rawDates].sort((a, b) => a.getTime() - b.getTime());
@@ -177,10 +183,21 @@ export function AnnualRibbon({
                 cursor: val != null ? "pointer" : "default",
               }}
               onMouseEnter={() => setHoveredKey(p.key)}
-              onClick={() => {
+              onClick={(e) => {
                 if (val != null && onClick) {
+                  const rd = rowMap.get(p.key);
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (onClick as any)({ dimensions: [{ value: p.date, column: cols[dateIdx] }] });
+                  (onClick as any)({
+                    value: rd?.rawDate ?? null,
+                    column: cols[dateIdx],
+                    data: [
+                      { col: cols[dateIdx], value: rd?.rawDate ?? null },
+                      { col: cols[valueIdx], value: rd?.rawValue ?? null },
+                    ],
+                    dimensions: [{ value: rd?.rawDate ?? null, column: cols[dateIdx] }],
+                    event: e.nativeEvent,
+                    origin: { row: rd?.row ?? [], cols },
+                  });
                 }
               }}
             >
