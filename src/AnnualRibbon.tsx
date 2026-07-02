@@ -13,7 +13,8 @@ const MARGIN_X = 6;
 const LEGEND_BAR_H = 10;
 const LEGEND_GAP = 4;
 const LEGEND_TEXT_H = 14;
-const LEGEND_H = LEGEND_BAR_H + LEGEND_GAP + LEGEND_TEXT_H;
+const LEGEND_TITLE_H = 14;
+const LEGEND_H_BASE = LEGEND_BAR_H + LEGEND_GAP + LEGEND_TEXT_H;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Col = Record<string, any>;
@@ -45,6 +46,7 @@ export function AnnualRibbon({
   const bandH = Math.max(8, settings?.bandHeight ?? 40);
   const scaleMode = settings?.scaleMode ?? "linear";
   const showLegend = settings?.showLegend ?? true;
+  const legendTitle = settings?.legendTitle ?? "";
 
   const cw = (width ?? 0) > 0 ? Math.floor(width ?? 0) : 0;
   const ch = (height ?? 0) > 0 ? Math.floor(height ?? 0) : 0;
@@ -103,6 +105,8 @@ export function AnnualRibbon({
   const animStep = nPeriods > 0 ? Math.max(0, Math.floor(1500 / nPeriods)) : 2;
 
   // Reserve space for legend only if it fits
+  const hasTitle = legendTitle.trim().length > 0;
+  const LEGEND_H = LEGEND_H_BASE + (hasTitle ? LEGEND_TITLE_H + 2 : 0);
   const legendVisible = showLegend && ch >= LABEL_H + LABEL_GAP + bandH + LEGEND_H + 10;
   const usedLegendH = legendVisible ? LEGEND_H + 6 : 0;
 
@@ -215,39 +219,36 @@ export function AnnualRibbon({
         })}
 
         {/* Color legend */}
-        {legendVisible && (
-          <g>
-            <rect
-              x={MARGIN_X}
-              y={legendY}
-              width={cw - 2 * MARGIN_X}
-              height={LEGEND_BAR_H}
-              fill="url(#ar-legend-grad)"
-              rx={3}
-            />
-            <text
-              x={MARGIN_X}
-              y={legendY + LEGEND_BAR_H + LEGEND_GAP + LEGEND_TEXT_H - 2}
-              fontSize={10} fill={labelColor} fontFamily="sans-serif" textAnchor="start"
-            >
-              {formatValue(minVal)}{scaleMode === "log" ? " (log)" : ""}
-            </text>
-            <text
-              x={cw / 2}
-              y={legendY + LEGEND_BAR_H + LEGEND_GAP + LEGEND_TEXT_H - 2}
-              fontSize={10} fill={labelColor} fontFamily="sans-serif" textAnchor="middle"
-            >
-              {formatValue((minVal + maxVal) / 2)}
-            </text>
-            <text
-              x={cw - MARGIN_X}
-              y={legendY + LEGEND_BAR_H + LEGEND_GAP + LEGEND_TEXT_H - 2}
-              fontSize={10} fill={labelColor} fontFamily="sans-serif" textAnchor="end"
-            >
-              {formatValue(maxVal)}
-            </text>
-          </g>
-        )}
+        {legendVisible && (() => {
+          const legendW = Math.floor((cw - 2 * MARGIN_X) / 2);
+          const legendX = Math.round((cw - legendW) / 2);
+          const titleY = legendY + LEGEND_TITLE_H - 2;
+          const barY = legendY + (hasTitle ? LEGEND_TITLE_H + 2 : 0);
+          const valY = barY + LEGEND_BAR_H + LEGEND_GAP + LEGEND_TEXT_H - 2;
+          return (
+            <g>
+              {hasTitle && (
+                <text
+                  x={cw / 2}
+                  y={titleY}
+                  fontSize={10} fill={labelColor} fontFamily="sans-serif" textAnchor="middle" fontWeight="600"
+                >
+                  {legendTitle}
+                </text>
+              )}
+              <rect x={legendX} y={barY} width={legendW} height={LEGEND_BAR_H} fill="url(#ar-legend-grad)" rx={3} />
+              <text x={legendX} y={valY} fontSize={10} fill={labelColor} fontFamily="sans-serif" textAnchor="start">
+                {formatValue(minVal)}{scaleMode === "log" ? " (log)" : ""}
+              </text>
+              <text x={cw / 2} y={valY} fontSize={10} fill={labelColor} fontFamily="sans-serif" textAnchor="middle">
+                {formatValue((minVal + maxVal) / 2)}
+              </text>
+              <text x={legendX + legendW} y={valY} fontSize={10} fill={labelColor} fontFamily="sans-serif" textAnchor="end">
+                {formatValue(maxVal)}
+              </text>
+            </g>
+          );
+        })()}
       </svg>
     </div>
   );

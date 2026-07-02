@@ -6,4 +6,5 @@ export type Settings = {
   colorHigh?: string;
   scaleMode?: "linear" | "log";
   showLegend?: boolean;
+  legendTitle?: string;
 };
