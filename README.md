@@ -1,6 +1,6 @@
-# Annual Ribbon
+# Time Ribbon
 
-A compact horizontal band for Metabase — one cell per time period, colored by value intensity. Supports hourly, daily, monthly, quarterly, and yearly aggregations with automatic granularity detection. Instantly reveals patterns and trends at a glance.
+A compact horizontal band for Metabase — one cell per time period, colored by value intensity. Supports hourly, daily, weekly, monthly, quarterly, and yearly aggregations with automatic granularity detection. Instantly reveals patterns and trends at a glance.
 
 ![preview](assets/preview.png)
 
@@ -10,7 +10,7 @@ A compact horizontal band for Metabase — one cell per time period, colored by 
 
 ## Installation
 
-1. Download `annual-ribbon-X.Y.Z.tgz` from the [latest release](https://github.com/ouquoi/metaviz-annual-ribbon/releases/latest)
+1. Download `time-ribbon-X.Y.Z.tgz` from the [latest release](https://github.com/ouquoi/metaviz-time-ribbon/releases/latest)
 2. In Metabase, go to **Admin → Visualizations**
 3. Click **Add a visualization**
 4. Upload the `.tgz` file
@@ -37,7 +37,7 @@ FROM events GROUP BY 1 ORDER BY 1
 
 ### Select the visualization
 
-In the question editor, open the visualization picker and select **Annual Ribbon**.
+In the question editor, open the visualization picker and select **Time Ribbon**.
 
 ### Configure settings
 
@@ -45,7 +45,7 @@ In the question editor, open the visualization picker and select **Annual Ribbon
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| Date column | Column used as the day key | First date column |
+| Date column | Column used as the period key | First date column |
 | Value column | Column used for color intensity | First numeric column |
 
 #### Appearance
@@ -57,6 +57,7 @@ In the question editor, open the visualization picker and select **Annual Ribbon
 | Color — high values | Color for the highest values | `#509EE3` |
 | Color scale | `Linear` or `Logarithmic` — log compresses large outliers | `Linear` |
 | Show legend | Display the color scale legend below the ribbon | `true` |
+| Legend title | Optional label displayed above the legend | *(empty)* |
 
 ## Capabilities
 
@@ -64,7 +65,7 @@ In the question editor, open the visualization picker and select **Annual Ribbon
 |---------|---------|
 | Auto granularity | Detects hour / day / week / month / quarter / year from data automatically |
 | Color scale | Linear (default) or logarithmic — log compresses extreme outliers for better contrast |
-| Color legend | Gradient bar with min / mid / max values below the ribbon |
+| Color legend | Gradient bar with min / mid / max values below the ribbon, optional title |
 | Multi-year support | Spans multiple years when the data covers more than one year |
 | Hover tooltip | Highlights the hovered cell, dims others, shows period and value |
 | Drill-through | Click a cell to filter by that time period |

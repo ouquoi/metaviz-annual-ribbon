@@ -1,12 +1,12 @@
 import { type CreateCustomVisualization, defineConfig } from "@metabase/custom-viz";
-import { AnnualRibbon } from "./AnnualRibbon";
+import { TimeRibbon } from "./TimeRibbon";
 import type { Settings } from "./types";
 import { isNumericCol, isDateCol } from "./utils";
 
 const createVisualization: CreateCustomVisualization<Settings> = ({ defineSetting }) => {
   return defineConfig<Settings>({
-    id: "annual-ribbon",
-    getName: () => "Annual Ribbon",
+    id: "time-ribbon",
+    getName: () => "Time Ribbon",
     minSize: { width: 4, height: 2 },
     defaultSize: { width: 12, height: 3 },
 
@@ -107,7 +107,7 @@ const createVisualization: CreateCustomVisualization<Settings> = ({ defineSettin
       }),
     },
 
-    VisualizationComponent: AnnualRibbon,
+    VisualizationComponent: TimeRibbon,
   });
 };
 

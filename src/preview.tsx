@@ -1,6 +1,6 @@
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { AnnualRibbon } from "./AnnualRibbon";
+import { TimeRibbon } from "./TimeRibbon";
 import type { Settings } from "./types";
 
 type GranularityKey = "hour" | "day" | "week" | "month" | "quarter" | "year";
@@ -117,7 +117,7 @@ function App() {
         borderRadius: 8,
         overflow: "hidden",
       }}>
-        <AnnualRibbon
+        <TimeRibbon
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           series={mockSeries as any}
           settings={settings}
