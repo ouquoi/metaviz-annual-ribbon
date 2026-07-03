@@ -35,6 +35,7 @@ export function TimeRibbon({
   series, settings, width, height, colorScheme, onClick,
 }: CustomVisualizationProps<Settings>) {
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const [hoveredPos, setHoveredPos] = useState<{ x: number; y: number; color: string } | null>(null);
 
   const isDark = colorScheme === "dark";
   const bgColor = isDark ? "#1c1c1c" : "#ffffff";
@@ -122,29 +123,32 @@ export function TimeRibbon({
   return (
     <div style={{ width: cw, height: ch, backgroundColor: bgColor, position: "relative", overflow: "hidden" }}>
       {/* Tooltip */}
-      {hoveredKey != null && (
-        <div style={{
-          position: "absolute",
-          top: Math.max(4, bandY - 36),
-          left: "50%",
-          transform: "translateX(-50%)",
-          backgroundColor: isDark ? "#2a2a2a" : "#ffffff",
-          border: `1.5px solid ${lerpColor(colorLow, colorHigh, hoveredValue != null ? normalize(hoveredValue, maxVal, scaleMode) : 0)}`,
-          borderRadius: 5,
-          padding: "3px 10px",
-          fontSize: 12,
-          color: isDark ? "#cccccc" : "#696e7b",
-          pointerEvents: "none",
-          zIndex: 20,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-          whiteSpace: "nowrap",
-        }}>
-          <span style={{ fontWeight: 700 }}>{formatPeriodLabel(hoveredKey, granularity)}</span>
-          {hoveredValue != null ? ` · ${hoveredValue.toLocaleString()}` : " · —"}
-        </div>
-      )}
+      {hoveredKey != null && hoveredPos && (() => {
+        const TW = 185;
+        const TH = 60;
+        const cellHalfH = bandH / 2 + 3;
+        const topAbove = hoveredPos.y - cellHalfH - TH;
+        const top = topAbove >= 4 ? topAbove : hoveredPos.y + cellHalfH;
+        const left = Math.max(4, Math.min(cw - TW - 4, hoveredPos.x - TW / 2));
+        const colName = cols[valueIdx]?.display_name || cols[valueIdx]?.name || "Value";
+        const pct = maxVal > 0 && hoveredValue != null ? Math.round((hoveredValue / maxVal) * 100) : 0;
+        const bg = isDark ? "#1F2335" : "#fff";
+        const border = `1px solid ${isDark ? "#3A4060" : "#ddd"}`;
+        const tx = isDark ? "#d0d5e0" : "#333";
+        const sub = isDark ? "#8892A0" : "#888";
+        return (
+          <div style={{ position: "absolute", left, top, width: TW, background: bg, border, borderRadius: 6, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.18)", display: "flex", pointerEvents: "none", zIndex: 20 }}>
+            <div style={{ width: 4, background: hoveredPos.color, flexShrink: 0 }} />
+            <div style={{ padding: "6px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: tx, whiteSpace: "nowrap" }}>{formatPeriodLabel(hoveredKey, granularity)}</div>
+              <div style={{ fontSize: 12, color: tx, whiteSpace: "nowrap" }}>{colName}: <strong>{hoveredValue != null ? hoveredValue.toLocaleString() : "—"}</strong></div>
+              {hoveredValue != null && <div style={{ fontSize: 11, color: sub }}>{pct}% of peak</div>}
+            </div>
+          </div>
+        );
+      })()}
 
-      <svg width={cw} height={ch} style={{ display: "block" }} onMouseLeave={() => setHoveredKey(null)}>
+      <svg width={cw} height={ch} style={{ display: "block" }} onMouseLeave={() => { setHoveredKey(null); setHoveredPos(null); }}>
         <defs>
           <linearGradient id="tr-legend-grad" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0%" stopColor={colorLow} />
@@ -184,7 +188,10 @@ export function TimeRibbon({
                 transition: "opacity 0.1s",
                 cursor: val != null ? "pointer" : "default",
               }}
-              onMouseEnter={() => setHoveredKey(p.key)}
+              onMouseEnter={() => {
+                setHoveredKey(p.key);
+                setHoveredPos({ x: x + cellW / 2, y: bandY + bandH / 2, color: fill });
+              }}
               onClick={(e) => {
                 if (val != null && onClick) {
                   const rd = rowMap.get(p.key);
