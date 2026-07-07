@@ -87,14 +87,16 @@ The visualization requires exactly one date column and one numeric column. If ei
 
 The granularity is inferred from the minimum interval between consecutive dates:
 
-| Min interval | Detected granularity | Cells |
-|---|---|---|
-| ≤ 2 hours | Hour | 24 per day |
-| ≤ 2 days | Day | 365–366 per year |
-| ≤ 10 days | Week | 52–53 per year |
-| ≤ 50 days | Month | 12 per year |
-| ≤ 150 days | Quarter | 4 per year |
-| > 150 days | Year | 1 per year |
+| Min interval | Detected granularity |
+|---|---|
+| ≤ 2 hours | Hour |
+| ≤ 2 days | Day |
+| ≤ 10 days | Week |
+| ≤ 50 days | Month |
+| ≤ 150 days | Quarter |
+| > 150 days | Year |
+
+In every granularity, the ribbon spans exactly from the earliest to the latest date in the data — it never pads out to a full calendar year, month, or quarter beyond what the data covers.
 
 ## Development
 

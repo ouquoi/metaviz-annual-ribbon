@@ -31,17 +31,6 @@ export function parseDate(v: unknown): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-export function getAllDaysOfYear(year: number): Date[] {
-  const days: Date[] = [];
-  for (let m = 0; m < 12; m++) {
-    const daysInMonth = new Date(year, m + 1, 0).getDate();
-    for (let d = 1; d <= daysInMonth; d++) {
-      days.push(new Date(year, m, d));
-    }
-  }
-  return days;
-}
-
 export type Granularity = "hour" | "day" | "week" | "month" | "quarter" | "year";
 
 function isoWeekNumber(d: Date): number {
@@ -139,19 +128,19 @@ export function generatePeriods(g: Granularity, minDate: Date, maxDate: Date): P
   }
 
   if (g === "day") {
-    const minYear = minDate.getFullYear();
-    const maxYear = maxDate.getFullYear();
-    const multiYear = maxYear > minYear;
-    for (let y = minYear; y <= maxYear; y++) {
-      for (const d of getAllDaysOfYear(y)) {
-        let label: string | undefined;
-        if (d.getDate() === 1) {
-          label = multiYear && d.getMonth() === 0
-            ? `${d.getFullYear()}`
-            : MONTHS_SHORT_EN[d.getMonth()];
-        }
-        periods.push({ key: dateToPeriodKey(d, "day"), date: new Date(d), separatorLabel: label });
+    const multiYear = maxDate.getFullYear() > minDate.getFullYear();
+    const start = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+    const end = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate());
+    let cur = new Date(start);
+    while (cur <= end) {
+      let label: string | undefined;
+      if (cur.getDate() === 1) {
+        label = multiYear && cur.getMonth() === 0
+          ? `${cur.getFullYear()}`
+          : MONTHS_SHORT_EN[cur.getMonth()];
       }
+      periods.push({ key: dateToPeriodKey(cur, "day"), date: new Date(cur), separatorLabel: label });
+      cur.setDate(cur.getDate() + 1);
     }
     return periods;
   }
@@ -184,33 +173,34 @@ export function generatePeriods(g: Granularity, minDate: Date, maxDate: Date): P
   }
 
   if (g === "month") {
-    const minYear = minDate.getFullYear();
-    const maxYear = maxDate.getFullYear();
-    for (let y = minYear; y <= maxYear; y++) {
-      for (let mo = 0; mo < 12; mo++) {
-        const d = new Date(y, mo, 1);
-        periods.push({
-          key: dateToPeriodKey(d, "month"),
-          date: d,
-          separatorLabel: mo === 0 ? `${y}` : undefined,
-        });
-      }
+    const start = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+    const end = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+    let cur = new Date(start);
+    while (cur <= end) {
+      periods.push({
+        key: dateToPeriodKey(cur, "month"),
+        date: new Date(cur),
+        separatorLabel: cur.getMonth() === 0 ? `${cur.getFullYear()}` : undefined,
+      });
+      cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
     }
     return periods;
   }
 
   if (g === "quarter") {
-    const minYear = minDate.getFullYear();
-    const maxYear = maxDate.getFullYear();
-    for (let y = minYear; y <= maxYear; y++) {
-      for (let q = 1; q <= 4; q++) {
-        const d = new Date(y, (q - 1) * 3, 1);
-        periods.push({
-          key: `${y}-Q${q}`,
-          date: d,
-          separatorLabel: q === 1 ? `${y}` : undefined,
-        });
-      }
+    const startQ = Math.floor(minDate.getMonth() / 3);
+    const endQ = Math.floor(maxDate.getMonth() / 3);
+    let year = minDate.getFullYear();
+    let q = startQ;
+    while (year < maxDate.getFullYear() || (year === maxDate.getFullYear() && q <= endQ)) {
+      const d = new Date(year, q * 3, 1);
+      periods.push({
+        key: `${year}-Q${q + 1}`,
+        date: d,
+        separatorLabel: q === 0 ? `${year}` : undefined,
+      });
+      q++;
+      if (q > 3) { q = 0; year++; }
     }
     return periods;
   }
